@@ -20,13 +20,22 @@ One Hermes gateway serving multiple users (Discord, Telegram, WhatsApp, ...) mea
 ## Installation
 
 ```bash
+hermes plugins install TTomas78/hermes-rbac
+cd ~/.hermes/plugins/hermes-rbac
+cp roles.yaml.example roles.yaml
+cp identities.yaml.example identities.yaml
+```
+
+Or from a clone:
+
+```bash
 git clone https://github.com/TTomas78/hermes-rbac ~/.hermes/plugins/hermes-rbac
 cd ~/.hermes/plugins/hermes-rbac
 cp roles.yaml.example roles.yaml
 cp identities.yaml.example identities.yaml
 ```
 
-Edit `roles.yaml`: set `bootstrap_admins` to your own `platform:user_id` (e.g. `discord:123456789`), then restart the Hermes gateway.
+Edit `roles.yaml`: set `bootstrap_admins` to your own `platform:user_id` (e.g. `discord:123456789`), enable the plugin (`hermes plugins enable hermes-rbac`), then restart the Hermes gateway.
 
 To find your user ID, just message the bot — the audit log records every attempt with its `platform:user_id` key.
 
@@ -111,11 +120,28 @@ hermes rbac unlink telegram:456
 
 Role mutations are **CLI-only by design**: it prevents privilege self-escalation from the chat.
 
+## Doesn't Hermes core already do this?
+
+Hermes ships **platform allowlists** (`TELEGRAM_ALLOWED_USERS`, `DISCORD_ALLOWED_USERS`, ...): a binary in/out check per platform. That answers *"can this person talk to the bot at all?"* — nothing more.
+
+| | Core allowlists | hermes-rbac |
+|---|---|---|
+| Who can message the bot | ✅ per platform | ✅ per platform |
+| Per-user tool permissions | ❌ | ✅ role-based, glob support |
+| Per-user skill visibility | ❌ | ✅ |
+| Sensitive path protection (`.env`, `config.yaml`) | ❌ | ✅ per role |
+| Role inheritance | ❌ | ✅ (`extends`) |
+| Same human, multiple platforms → one identity | ❌ | ✅ OTP linking |
+| Audit trail of gate decisions | ❌ | ✅ `audit.jsonl` |
+| Hot-reload without gateway restart | ❌ | ✅ |
+
+**Rule of thumb:** single-user bot or "only these 3 friends can talk to it" → core allowlists are enough. Multi-user deployment where different people get different capabilities → this plugin.
+
 ## Upstream PRs
 
 This plugin works with current Hermes Agent. Two upstream PRs improve the integration (optional, backwards-compatible):
 
-- [#90977](https://github.com/NousResearch/hermes-agent/pull/90977) — `{"action": "authorize"}` for `pre_gateway_dispatch`: lets the plugin act as the authorization layer (skip platform allowlist after authenticating the sender itself).
+- [#90977](https://github.com/NousResearch/hermes-agent/pull/90977) — `{"action": "authorize"}` for `pre_gateway_dispatch`: lets the plugin act as the authorization layer (skip platform allowlist after authenticating the sender itself). **Why it matters:** when a linked user messages from a secondary platform (e.g. Telegram user whose canonical ID is their Discord ID), the platform allowlist would reject the mutated ID — this action lets the plugin vouch for the sender. Until it lands, add canonical IDs to each platform's allowlist env var as a workaround.
 - [#91527](https://github.com/NousResearch/hermes-agent/pull/91527) — sender context (opt-in) for plugin slash commands: enables `/rbac whoami` to work from chat.
 
 ## Development
