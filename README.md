@@ -92,6 +92,20 @@ persons:
       - telegram:444555666
 ```
 
+### Memory & identity linking
+
+When a human links multiple platform identities (e.g. Discord + Telegram), the plugin mutates `event.source.user_id` to the **canonical identity** before the agent sees the message. This means:
+
+- **Hindsight memory**: the template `hermes-{profile}-{user}` resolves to **one bank** across all linked platforms — the user doesn't lose context when switching apps.
+- **RBAC**: roles are looked up by the canonical key only, so permissions stay consistent.
+
+The linking flow is self-service via OTP:
+
+1. On platform A: `hermes rbac link-challenge <key_a>` → generates `LINK-XXXXXX` (single-use, 5 min TTL)
+2. On platform B: `hermes rbac link-confirm <key_b> LINK-XXXXXX --keep-memory a|b` → the user chooses which memory bank to keep; the other is archived (orphaned, not deleted — reversible with `unlink`)
+
+> **Workaround until PR #90977 lands:** the gateway allowlist runs *after* the dispatch hook, so a message arriving on a secondary platform carries the canonical (foreign-platform) ID and gets rejected. Add the canonical ID to that platform's allowlist env var (e.g. `TELEGRAM_ALLOWED_USERS=<telegram_id>,<canonical_discord_id>`) to fix it.
+
 ## Usage
 
 ### Slash command (in chat)
