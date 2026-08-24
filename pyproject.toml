@@ -1,0 +1,18 @@
+[project]
+name = "hermes-rbac"
+version = "0.1.0"
+description = "Role-based access control (RBAC) plugin for multi-user Hermes Agent deployments"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+dependencies = ["pyyaml>=6.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["audit", "cli", "identity", "registry", "resolver"]

@@ -1,0 +1,39 @@
+# Ejemplo de roles.yaml para hermes-rbac.
+# Copiar a ~/.hermes/plugins/hermes-rbac/roles.yaml y ajustar.
+
+fail_closed: true
+
+# Salvavidas: si la config se rompe (ciclo, YAML invalido), estos usuarios
+# igual entran con permisos full para arreglarla.
+bootstrap_admins:
+  - "discord:TU_USER_ID"
+
+# Los toolsets son nombres de tools de Hermes (terminal, read_file, web_search...),
+# con glob soportado (mcp__github__*). skill_view es una tool: incluirla si el
+# rol debe poder ver sus skills permitidos.
+roles:
+  admin:
+    toolsets: ["*"]
+    skills: ["*"]
+    bypass_sensitive_paths: true
+
+  dev:
+    extends: [viewer]
+    toolsets: [terminal, read_file, write_file, patch, search_files, execute_code, mcp__github__*]
+    skills:
+      - test-driven-development
+      - systematic-debugging
+      - github-pr-workflow
+
+  viewer:
+    toolsets: [web_search, web_extract, skill_view]
+    skills: [youtube-content, gif-search]
+
+  guest:
+    toolsets: []
+    skills: []
+
+users:
+  "discord:TU_USER_ID": [admin]
+  # "discord:OTRO_ID": [dev]
+  # "*": [guest]   # descomentar para default abierto a usuarios desconocidos

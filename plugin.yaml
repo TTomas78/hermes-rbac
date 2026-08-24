@@ -1,0 +1,7 @@
+name: hermes-rbac
+version: 0.1.0
+description: "RBAC por rol con herencia para Hermes multiusuario: gatea dispatch de mensajes (pre_gateway_dispatch) y llamadas a tools/skills/rutas sensibles (pre_tool_call) segun roles.yaml."
+author: "Tomas + iris"
+hooks:
+  - pre_gateway_dispatch
+  - pre_tool_call

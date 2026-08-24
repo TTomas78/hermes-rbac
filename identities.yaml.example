@@ -1,0 +1,12 @@
+# Example identities.yaml for hermes-rbac.
+# Each person groups platform:user_id identities belonging to the same human.
+# canonical = the identity chosen when linking; it defines the key used in
+# roles.yaml and the memory bank namespace (hermes-{profile}-{user}).
+# Mutations: CLI `hermes rbac link-challenge/link-confirm/unlink` or manual
+# edit (hot-reload by file mtime).
+persons:
+  example_person:
+    canonical: discord:YOUR_DISCORD_ID
+    identities:
+      - discord:YOUR_DISCORD_ID
+      - telegram:YOUR_TELEGRAM_ID
