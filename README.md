@@ -39,6 +39,13 @@ Edit `roles.yaml`: set `bootstrap_admins` to your own `platform:user_id` (e.g. `
 
 To find your user ID, just message the bot — the audit log records every attempt with its `platform:user_id` key.
 
+## Examples
+
+Ready-to-copy configs for common scenarios:
+
+- **[Family / friends setup](examples/family-setup.md)** — one bot for your household: admin (you), user (sibling), guest (cousin). Includes OTP account linking walkthrough.
+- **[Work team setup](examples/team-setup.md)** — role inheritance in practice: `admin` / `dev extends viewer` / `viewer`, with a permission test matrix and audit log walkthrough.
+
 ## Configuration
 
 ### roles.yaml
