@@ -234,21 +234,18 @@ def _pre_gateway_dispatch(event=None, gateway=None, session_store=None, **_kw):
             return {"action": "rewrite", "text": RBAC_DENY_TEXT}
         return {"action": "allow"}
 
-    # Identidad unificada: si la key pertenece a una persona, roles y
-    # memoria se resuelven con la identidad CANONICA (la elegida por el
-    # usuario al vincular). Asi Discord y Telegram comparten bank.
+    # Identidad unificada: si la key pertenece a una persona, roles se
+    # resuelven con la identidad CANONICA (la elegida por el usuario al
+    # vincular). NUNCA se muta source.user_id: el core persiste la sesion
+    # con ese ID despues del hook, y una mutacion contaminaria la DB (el
+    # proximo mensaje de esta plataforma llegaria con el ID de otra).
+    # El mapeo es unilateral: el plugin lo resuelve internamente.
     identity = _get_identity()
     identity.maybe_reload()
     canonical_key = identity.resolve(user_key)
     if canonical_key != user_key:
         logger.info("hermes-rbac: identidad %s -> canonica %s", user_key,
                     canonical_key)
-        source = getattr(event, "source", None)
-        if source is not None:
-            try:
-                source.user_id = canonical_key.split(":", 1)[1]
-            except (IndexError, AttributeError) as e:
-                logger.warning("hermes-rbac: no se pudo mutar user_id: %s", e)
     user_key = canonical_key
 
     perms = resolver.effective(user_key)
@@ -273,8 +270,9 @@ def _user_for_agent_session(session_id: str) -> Optional[str]:
 
     El session_id que llega a pre_tool_call es el ID interno del agente
     (timestamp), no la session key. El core persiste el mapping en la tabla
-    sessions via record_gateway_session_peer — con el user_id YA canonical
-    porque nuestro dispatch lo muto antes. Retorna la user_key completa
+    sessions via record_gateway_session_peer — con el user_id ORIGINAL de la
+    plataforma (el dispatch restaura la mutacion antes de salir). Se resuelve
+    a la identidad canonica antes de devolver. Retorna la user_key completa
     (platform:user_id) o None si no hay mapping.
     """
     if not session_id:
@@ -297,7 +295,12 @@ def _user_for_agent_session(session_id: str) -> Optional[str]:
         if row is None or not row[1]:
             return None
         platform, user_id = row
-        return f"{platform}:{user_id}"
+        raw_key = f"{platform}:{user_id}"
+        # La DB ahora guarda el ID original de la plataforma; resolver a
+        # canonica si pertenece a una persona vinculada.
+        identity = _get_identity()
+        identity.maybe_reload()
+        return identity.resolve(raw_key)
     except Exception as e:
         logger.debug("hermes-rbac: lookup state.db fallo session=%s: %s", session_id, e)
         return None
